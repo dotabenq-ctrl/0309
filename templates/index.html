@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數字輸入</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        input[type="number"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>請輸入數字</h2>
+        <form id="numberForm">
+            <input type="number" id="numberInput" required placeholder="輸入整數">
+            <button type="submit">送出</button>
+        </form>
+        <div id="message"></div>
+        <p><a href="/admin">前往後台</a></p>
+    </div>
+
+    <script>
+        document.getElementById('numberForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('numberInput').value;
+            const messageDiv = document.getElementById('message');
+
+            if (!inputVal || isNaN(inputVal) || !Number.isInteger(parseFloat(inputVal))) {
+                messageDiv.textContent = '請輸入有效的整數！';
+                messageDiv.className = 'error';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/numbers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ value: parseInt(inputVal) })
+                });
+
+                if (response.ok) {
+                    messageDiv.textContent = '送出成功！';
+                    messageDiv.className = 'success';
+                    document.getElementById('numberInput').value = '';
+                } else {
+                    messageDiv.textContent = '送出失敗，請稍後再試。';
+                    messageDiv.className = 'error';
+                }
+            } catch (error) {
+                messageDiv.textContent = '網路連線異常，送出失敗。';
+                messageDiv.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>

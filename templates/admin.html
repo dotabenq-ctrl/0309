@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>後台管理</title>
+    <!-- 引入 Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 80%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .danger {
+            background-color: #ffcccc;
+            color: #d8000c;
+            font-weight: bold;
+        }
+
+        .normal {
+            background-color: #ccffcc;
+            color: #270;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>最新紀錄列表</h2>
+    <a href="/" class="back-link">回輸入頁</a>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>數值 (Value)</th>
+                <th>建立時間 (Created At)</th>
+                <th>狀態</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- 資料將透過 JS 生成 -->
+        </tbody>
+    </table>
+
+    <script>
+        // 從後端提供的環境變數設定 Supabase 連線
+        const SUPABASE_URL = "{{ SUPABASE_URL }}";
+        const SUPABASE_ANON_KEY = "{{ SUPABASE_ANON_KEY }}";
+
+        // 建立 Supabase client
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 格式化時間輔助函數
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // 判斷狀態與 CSS class
+        function getStatusInfo(value) {
+            if (value >= 55) {
+                return { text: '危險', class: 'danger' };
+            }
+            return { text: '正常', class: 'normal' };
+        }
+
+        // 渲染單筆資料字串 (供插入至 tbody 的最前面)
+        function createRowHTML(row) {
+            const status = getStatusInfo(row.value);
+            return `
+                <tr id="row-${row.id}">
+                    <td>${row.id}</td>
+                    <td>${row.value}</td>
+                    <td>${formatDate(row.created_at)}</td>
+                    <td class="${status.class}">${status.text}</td>
+                </tr>
+            `;
+        }
+
+        // 初始載入：透過傳統 API 獲取資料
+        async function loadInitialData() {
+            try {
+                const res = await fetch('/api/numbers');
+                const result = await res.json();
+
+                if (result.status === 'success' && result.data) {
+                    const tbody = document.getElementById('tableBody');
+                    // 將資料顯示，最新資料理應排前面
+                    const html = result.data.map(createRowHTML).join('');
+                    tbody.innerHTML = html;
+                }
+            } catch (error) {
+                console.error("載入初始資料錯誤:", error);
+            }
+        }
+
+        // 訂閱 Supabase Realtime 更新
+        function subscribeRealtime() {
+            supabaseClient
+                .channel('room1')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'numbers' }, payload => {
+                    console.log('Realtime 新資料:', payload.new);
+                    // 當有新資料時，加入到表格最上方
+                    const tbody = document.getElementById('tableBody');
+                    const newRow = createRowHTML(payload.new);
+                    tbody.insertAdjacentHTML('afterbegin', newRow);
+                })
+                .subscribe();
+        }
+
+        // 啟動流程
+        window.addEventListener('DOMContentLoaded', () => {
+            loadInitialData();
+            subscribeRealtime();
+        });
+    </script>
+</body>
+
+</html>

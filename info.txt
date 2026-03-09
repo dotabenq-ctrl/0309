@@ -1,0 +1,152 @@
+請幫我建立一個可部署到 Render 的 Python Web App，需求如下。請直接產出完整專案、程式碼、設定檔、部署檔、README，以及必要的測試與操作說明，不要只給我規劃，請直接實作成可執行專案。
+
+【技術目標】
+1. 後端使用 Python
+2. 使用 FastAPI 作為 Web Framework
+3. 使用 Supabase 作為資料庫
+4. 前端可先用簡單 HTML + JavaScript，不必使用 React
+5. 部署平台使用 Render
+6. 專案需可在本機執行，也可直接部署到 Render
+
+【功能需求】
+A. 使用者輸入頁
+- 建立一個網頁，提供使用者輸入一個數字
+- 使用者按下送出後，將數字寫入 Supabase 資料表
+- 表單需有基本驗證：
+  - 必填
+  - 必須為數字
+  - 可接受整數
+- 送出成功後，顯示成功訊息
+- 送出失敗時，顯示錯誤訊息
+
+B. 後台管理頁
+- 建立一個 admin 管理頁面
+- 可以即時讀取 Supabase 內的資料並顯示最新紀錄
+- 至少顯示：
+  - id
+  - value
+  - created_at
+- 當數字 >= 55 時，該筆資料要明顯標示「危險」
+- 若數字 < 55，顯示正常狀態
+- 畫面上要有清楚的狀態樣式區分，例如：
+  - 危險：紅色
+  - 正常：綠色或一般樣式
+
+C. 即時更新
+- 優先使用 Supabase Realtime 讓 admin 頁面即時更新
+- 若實作上有困難，可退而求其次使用 polling，但請優先完成 realtime 版本
+- 請在程式碼與 README 中清楚說明採用的是 realtime 還是 polling
+
+D. 專案安全性
+- 不要把敏感金鑰硬寫在程式碼內
+- 所有環境變數統一使用 .env 與 Render environment variables 管理
+- 後端與前端的金鑰使用方式要正確，避免暴露 service role key
+- 若 admin 頁未做登入，請在 README 說明目前為簡化版，正式上線建議加入登入保護
+
+【資料庫設計】
+請在 Supabase 建立一張 table，例如 numbers，欄位至少包含：
+- id: bigint / identity primary key
+- value: integer not null
+- created_at: timestamp with time zone, default now()
+
+請一併提供：
+1. 建表 SQL
+2. 若需啟用 Realtime，請說明設定方式
+3. RLS 是否啟用的建議
+4. 若前端需直接訂閱 realtime，請設計合適的資料讀取策略
+
+【後端 API 需求】
+請至少建立以下 API：
+1. POST /api/numbers
+- 接收數字
+- 寫入 Supabase
+- 回傳成功或錯誤訊息
+
+2. GET /api/numbers
+- 讀取最新資料
+- 預設依 created_at 由新到舊排序
+- 可限制筆數，例如最新 50 筆
+
+請使用清楚的 API 結構、輸入驗證與錯誤處理。
+
+【前端頁面需求】
+請至少建立以下頁面：
+
+1. /
+- 使用者輸入頁
+- 有數字輸入框與送出按鈕
+- 風格簡潔即可，但請做基本排版
+
+2. /admin
+- 後台管理頁
+- 顯示最新紀錄列表
+- 顯示每筆資料的狀態：
+  - value >= 55 -> 危險
+  - value < 55 -> 正常
+- 若使用 realtime，請做到新資料寫入後畫面自動更新，不需手動重新整理
+
+【Render 部署需求】
+請讓專案可直接部署到 Render，並完成以下內容：
+1. requirements.txt
+2. render.yaml（若適合）
+3. 啟動指令
+4. Python 版本設定（如需要）
+5. README 中寫清楚：
+   - 如何在本機執行
+   - Render 如何部署
+   - Render 要設定哪些環境變數
+   - Supabase 要準備哪些設定
+
+【環境變數】
+請預留並使用以下環境變數命名（可視需要補充）：
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY （若後端需要）
+- APP_ENV
+- PORT
+
+請判斷哪些變數只應在後端使用，哪些可暴露於前端，並採取正確做法。
+
+【程式碼品質要求】
+1. 專案目錄結構清楚
+2. 程式碼要有註解，但不要過度冗長
+3. 有基本錯誤處理
+4. 請避免過度設計，先以簡潔、可執行、可部署為主
+5. README 必須完整
+6. 若有任何設計取捨，請在 README 註明原因
+
+【希望輸出的檔案】
+請直接建立完整專案，至少包含：
+- app/main.py 或等效入口檔
+- templates 或 static 前端檔案
+- requirements.txt
+- .env.example
+- README.md
+- render.yaml（若採用）
+- Supabase SQL 初始化檔，例如 sql/init.sql
+
+【驗收標準】
+完成後請自我驗證以下項目：
+1. 本機可啟動
+2. 首頁可輸入數字
+3. 輸入後資料成功寫入 Supabase
+4. /admin 可看到資料
+5. 當 value >= 55 時顯示「危險」
+6. 可部署到 Render
+7. README 足夠讓其他工程師依文件完成部署
+
+【實作偏好】
+- 優先選擇最穩定、最簡單可落地的方案
+- 不需要花太多時間做 UI 美化
+- 以可交付 MVP 為主
+- 若某部分存在兩種方案，請直接選擇較適合 Render + Supabase + FastAPI 的方案並實作，不要只列出選項
+
+【最後交付】
+完成後請輸出：
+1. 專案目錄結構
+2. 主要檔案內容
+3. 部署步驟
+4. 本機測試步驟
+5. Supabase 設定步驟
+6. Render 設定步驟
+7. 尚未完成或正式上線前建議補強項目
